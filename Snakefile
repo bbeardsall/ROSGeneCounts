@@ -1,3 +1,4 @@
+# Test
 GENOMES = ["Fistulifera_solaris.aa", "Leptocylindrus_danicus-dna-trans"]
 IDS = glob_wildcards("DataIn/Genomes/{genomeName}.fasta")
 
