@@ -33,8 +33,9 @@ check_is_DNA () {
 	FirstSequence=$(awk "/^>/ {n++} n>$NSEQS {exit} {print}" $1 | awk '!/^>/ { print; }' | tr -cd '[:alnum:]' )
 
     # subset first n characters
-	NCHAR=200
+	NCHAR=20
 	TestSequence=${FirstSequence:0:$NCHAR}
+    echo $TestSequence
 
     # Default to is DNA
 	isDNA=1
@@ -43,7 +44,8 @@ check_is_DNA () {
 	for (( i=0; i<${#TestSequence}; i++ ))
 		do
         # If a non-DNA character (A,T,G,C,N), then not DNA
-		if [[ ${TestSequence:$i:1} =~ [^ATGCN] ]]
+		#if [[ ${TestSequence:$i:1} =~ [^ATGCNatgcn] ]]
+        if [[ ${TestSequence:$i:1} =~ ['MmRrDdBbQqZzHhIiLlKkMmFfPpSsWwYyVv'] ]]
 			then
 				isDNA=0
 		fi

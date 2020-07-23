@@ -4,8 +4,8 @@ IDS = glob_wildcards("DataIn/Genomes/{genomeName}.fasta")
 
 rule all:
     input:
-        "output/results/concatenated.fasta" 
-        #expand("output/hits/HITS_{genomeName}.fasta", genomeName=IDS.genomeName)
+        #"output/results/concatenated.fasta" 
+        expand("output/eggNOG/{genomeName}.emapper.annotations", genomeName=IDS.genomeName)
 
 rule blast_genome:
     input:
@@ -15,7 +15,7 @@ rule blast_genome:
         done=touch("output/databases/{genomeName}.makeblastdb.done"),
         results="output/results/results_{genomeName}.csv"
     shell:
-        "scripts/BlastTest.bash {input.probes} {input.genome} {output.results} output/databases/{wildcards.genomeName} {wildcards.genomeName}"
+        "bash scripts/BlastTest.bash {input.probes} {input.genome} {output.results} output/databases/{wildcards.genomeName} {wildcards.genomeName}"
 
 rule get_hit_seqs:
     input:
@@ -34,6 +34,13 @@ rule concatenate:
     shell:
         "cat {input.hits} > {output}"
 
-
-        
+rule eggNOG:
+    input:
+        hitsFile="output/hits/HITS_{genomeName}.fasta"
+    output:
+        "output/eggNOG/{genomeName}.emapper.annotations"
+    threads:
+        4
+    shell:
+        "python2.7 ~/eggNOG/eggnog-mapper-master/emapper.py -i {input.hitsFile} --output output/eggNOG/{wildcards.genomeName} -m diamond --cpu 4 -d 'none' --tax_scope 'auto' --go_evidence 'non-electronic' --target_orthologs 'all' --seed_ortholog_evalue 0.001 --seed_ortholog_score 60 --query-cover 20 --subject-cover 0"
     

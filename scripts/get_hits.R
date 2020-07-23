@@ -1,6 +1,6 @@
-library(tidyverse, quietly = TRUE)
-library(Biostrings, quietly = TRUE)
-print("Hi")
+suppressPackageStartupMessages(library(tidyverse, quietly = TRUE))
+suppressPackageStartupMessages(library(Biostrings, quietly = TRUE))
+
 genomeFile <- snakemake@input[["genome"]]
 #genomeFile <- "DataIn/Genomes/Fistulifera_solaris.aa.fasta"
 #genomeName <- "Fistulifera_solaris.aa"
