@@ -40,7 +40,8 @@ rule eggNOG:
     output:
         "output/eggNOG/{genomeName}.emapper.annotations"
     threads:
-        4
+        8
     shell:
-        "python2.7 ~/eggNOG/eggnog-mapper-master/emapper.py -i {input.hitsFile} --output output/eggNOG/{wildcards.genomeName} -m diamond --cpu 4 -d 'none' --tax_scope 'auto' --go_evidence 'non-electronic' --target_orthologs 'all' --seed_ortholog_evalue 0.001 --seed_ortholog_score 60 --query-cover 20 --subject-cover 0"
+        "bash scripts/eggNOG.bash {input.hitsFile} {wildcards.genomeName} 8"
+        #"python2.7 ~/eggNOG/eggnog-mapper-master/emapper.py --translate -i {input.hitsFile} --output output/eggNOG/{wildcards.genomeName} -m diamond --cpu 4 -d 'none' --tax_scope 'auto' --go_evidence 'non-electronic' --target_orthologs 'all' --seed_ortholog_evalue 0.001 --seed_ortholog_score 60 --query-cover 20 --subject-cover 0"
     
