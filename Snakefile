@@ -5,7 +5,8 @@ IDS = glob_wildcards("DataIn/Genomes/{genomeName}.fasta")
 rule all:
     input:
         #"output/results/concatenated.fasta" 
-        expand("output/eggNOG/{genomeName}.emapper.annotations", genomeName=IDS.genomeName)
+        #expand("output/eggNOG/{genomeName}.emapper.annotations", genomeName=IDS.genomeName)
+        "output/JoinedHitAttributes.csv"
 
 rule blast_genome:
     input:
@@ -44,4 +45,18 @@ rule eggNOG:
     shell:
         "bash scripts/eggNOG.bash {input.hitsFile} {wildcards.genomeName} 8"
         #"python2.7 ~/eggNOG/eggnog-mapper-master/emapper.py --translate -i {input.hitsFile} --output output/eggNOG/{wildcards.genomeName} -m diamond --cpu 4 -d 'none' --tax_scope 'auto' --go_evidence 'non-electronic' --target_orthologs 'all' --seed_ortholog_evalue 0.001 --seed_ortholog_score 60 --query-cover 20 --subject-cover 0"
+    
+rule joinROSEggNOG:
+    input:
+        eggNOGannotations=expand("output/eggNOG/{genomeName}.emapper.annotations", genomeName=IDS.genomeName),
+        ROSinfo="DataIn/RosEC.txt"
+    output:
+        JoinedHitAttributes="output/JoinedHitAttributes.csv"
+    script:
+        "scripts/JoinEggNOGAnnotations.R"
+
+rule getUmatchedHits:
+    input:
+        JoinedHitAttributes="output/JoinedHitAttributes.csv"
+    output:
     
