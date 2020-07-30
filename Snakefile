@@ -1,13 +1,17 @@
 # Test
 GENOMES = ["Fistulifera_solaris.aa", "Leptocylindrus_danicus-dna-trans"]
 IDS = glob_wildcards("DataIn/Genomes/{genomeName}.fasta")
+#EXTRASEQS = glob_wildcards("DataIn/ExtraSeqs/{extraSeqs}.fasta")
 
 rule all:
     input:
         #"output/results/concatenated.fasta" 
         #expand("output/eggNOG/{genomeName}.emapper.annotations", genomeName=IDS.genomeName)
         #"output/JoinedHitAttributes.csv"
-        expand("output/unknownHits/UnknownHits_{genomeName}.fasta", genomeName=IDS.genomeName)
+        #expand("output/unknownHits/UnknownHits_{genomeName}.fasta", genomeName=IDS.genomeName)
+        #expand("output/extraDatabases/{extraSeqs}.makeblastdb.done", extraSeqs=EXTRASEQS.extraSeqs),
+        #"output/extraDatabases/ExtraSeqsSwissProtCombined.makeblastdb.done"
+        "output/extraDatabases/ExtraSeqsSwissProtCombined.makeblastdb.done"
         
 
 rule blast_genome:
@@ -66,3 +70,24 @@ rule getUmatchedHits:
         unknownHitsFile="output/unknownHits/UnknownHits_{genomeName}.fasta"
     script:
         "scripts/GetUnmatchedHits.R"
+
+rule makeBlastDbExtraSeqs:
+    input:
+        "DataIn/ExtraSequences.fasta"
+    output:
+        touch("output/extraDatabases/ExtraSequences.makeblastdb.done")
+    shell:
+        "makeblastdb -in {input} -out output/extraDatabases/ExtraSequences -title ExtraSequences -dbtype prot"
+
+rule combineSpExtraSeqsDB:
+    input:
+        #doneDbs="output/databases/{extraSeqs}.makeblastdb.done",
+        Sp="DataIn/SpDatabase/swissprot.00.phr",
+        ExtraDB="output/extraDatabases/ExtraSequences.makeblastdb.done"
+        
+    output:
+        touch("output/extraDatabases/ExtraSeqsSwissProtCombined.makeblastdb.done"),
+    shell:
+        "blastdb_aliastool -dblist 'output/extraDatabases/ExtraSequences DataIn/SpDatabase/swissprot' -dbtype prot -out output/extraDatabases/ExtraSeqsSwissProtCombined -title ExtraSeqsSwissProtCombined"
+
+
