@@ -11,7 +11,8 @@ rule all:
         #expand("output/unknownHits/UnknownHits_{genomeName}.fasta", genomeName=IDS.genomeName)
         #expand("output/extraDatabases/{extraSeqs}.makeblastdb.done", extraSeqs=EXTRASEQS.extraSeqs),
         #"output/extraDatabases/ExtraSeqsSwissProtCombined.makeblastdb.done"
-        "output/extraDatabases/ExtraSeqsSwissProtCombined.makeblastdb.done"
+        #"output/extraDatabases/ExtraSeqsSwissProtCombined.makeblastdb.done"
+        expand("output/SpBlastResults/SPBlast_{genomeName}.csv", genomeName=IDS.genomeName)
         
 
 rule blast_genome:
@@ -90,4 +91,13 @@ rule combineSpExtraSeqsDB:
     shell:
         "blastdb_aliastool -dblist 'output/extraDatabases/ExtraSequences DataIn/SpDatabase/swissprot' -dbtype prot -out output/extraDatabases/ExtraSeqsSwissProtCombined -title ExtraSeqsSwissProtCombined"
 
-
+rule spBlast:
+    input:
+        unknownHitsFile="output/unknownHits/UnknownHits_{genomeName}.fasta",
+        databaseDone="output/extraDatabases/ExtraSeqsSwissProtCombined.makeblastdb.done"
+    output:
+        SpResults="output/SpBlastResults/SPBlast_{genomeName}.csv"
+    threads:
+        4
+    shell:
+        "bash scripts/SpBlastSnake.bash {input.unknownHitsFile} output/extraDatabases/ExtraSeqsSwissProtCombined {output.SpResults} 4"
