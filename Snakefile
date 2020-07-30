@@ -6,7 +6,9 @@ rule all:
     input:
         #"output/results/concatenated.fasta" 
         #expand("output/eggNOG/{genomeName}.emapper.annotations", genomeName=IDS.genomeName)
-        "output/JoinedHitAttributes.csv"
+        #"output/JoinedHitAttributes.csv"
+        expand("output/unknownHits/UnknownHits_{genomeName}.fasta", genomeName=IDS.genomeName)
+        
 
 rule blast_genome:
     input:
@@ -57,6 +59,10 @@ rule joinROSEggNOG:
 
 rule getUmatchedHits:
     input:
-        JoinedHitAttributes="output/JoinedHitAttributes.csv"
+        JoinedHitAttributes="output/JoinedHitAttributes.csv",
+        results="output/results/results_{genomeName}.csv",
+        hits="output/hits/HITS_{genomeName}.fasta"
     output:
-    
+        unknownHitsFile="output/unknownHits/UnknownHits_{genomeName}.fasta"
+    script:
+        "scripts/GetUnmatchedHits.R"

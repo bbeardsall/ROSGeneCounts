@@ -1,5 +1,8 @@
 *
 !.gitignore
-!/scripts/*
+!/scripts/*.R
+!/scripts/*.bash
+#!/scripts/.*\\.R
+#!/scripts/.*\\.bash 
 !/scripts
 !Snakefile

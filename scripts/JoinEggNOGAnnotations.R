@@ -20,7 +20,8 @@ EggnogHeader <- pull(read_csv(eggNOGfiles[1], n_max = 3))[3] %>%
 eggNOGData <- map(eggNOGfiles, read_tsv, comment = "#", col_names = EggnogHeader) %>%
   bind_rows() %>%
   # split the hit name into the genome name and gene ID
-  separate(col = "query_name", into = c("Ome", "GeneId"), sep = "___")
+  separate(col = "query_name", into = c("Ome", "GeneId"), 
+           sep = "___", remove = FALSE)
 
 # Read ROS enzyme info tsv file
 ROSEC <- read_tsv(ROSEcFile)
