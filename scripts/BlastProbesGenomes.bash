@@ -1,28 +1,14 @@
 #!/usr/bin/env bash
-#probes=$(realpath $1)
+
+# Script to BLAST probe sequences against Omes
+# Brian Beardsall
+
+# Define input parameters
 probes="$1"
 genome="$2"
-
 results="$3"
 database="$4"
-
 genomeName="$5"
-#"output/out_Fistulifera_solaris.aa.txt"
-################
-
-# # Set file paths
-# DataInPath='../DataIn'
-# ProcessDataPath='../ProcessData'
-
-# GenomePath="$DataInPath/Genomes"
-# DatabasePath="$ProcessDataPath/BlastDatabases"
-# ResultsPath="BlastResults"
-# ProbesFile="enzyme_probes_noSpaces_combined.txt"
-
-################
-
-# Bash script path from my linux environment home path:
-# c/Users/brian/Campbell Lab Dropbox/Phylis Campbell/ROS_bioinfo/BrianROSGeneCounts/Bash
 
 # function to parse first sequence of FASTA, determine if AA or DNA
 # sets isDNA = 1 if DNA, 0 if not
@@ -42,7 +28,7 @@ check_is_DNA () {
     # loop through characters
 	for (( i=0; i<${#TestSequence}; i++ ))
 		do
-        # If a non-DNA character (A,T,G,C,N), then not DNA
+        # If contains a non-DNA character (A,T,G,C,N upper & lowercase), then not DNA
 		if [[ ${TestSequence:$i:1} =~ [^ATGCNatgcn] ]]
 			then
 				isDNA=0
@@ -58,10 +44,8 @@ check_is_DNA () {
 	fi
 }
 
-
 # check if file is DNA or AA
 check_is_DNA ${genome}
-
 
 if [[ $isDNA == 0 ]]
     # if not DNA, make prot database, run blastp
@@ -71,8 +55,8 @@ if [[ $isDNA == 0 ]]
         echo blastp
         blastp -db ${database} -query ${probes} -out ${results} -outfmt "10 std qframe sframe" -evalue 0.5
         #echo "is DNA"  > ${output}  
-    # if DNA, make nucl database, run tblastn
 
+    # else if DNA, make nucl database, run tblastn
     else
         echo "make protein database"
         makeblastdb -in ${genome} -out ${database} -title ${genomeName} -dbtype nucl

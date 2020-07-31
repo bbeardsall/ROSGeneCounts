@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
-#"python2.7 ~/eggNOG/eggnog-mapper-master/emapper.py -i input --output output/eggNOG/output -m diamond --cpu 4 -d 'none' --tax_scope 'auto' --go_evidence 'non-electronic' --target_orthologs 'all' --seed_ortholog_evalue 0.001 --seed_ortholog_score 60 --query-cover 20 --subject-cover 0"
 
+# Script to annotate probe hits with eggNOG-mapper running locally
+# Brian Beardsall
+
+# Define input parameters
 input=$1
 output=$2
 cpu=$3
 
+# function to parse first sequence of FASTA, determine if AA or DNA
+# sets isDNA = 1 if DNA, 0 if not
 check_is_DNA () {
     # number of seqs to check
 	NSEQS=1
@@ -40,14 +45,14 @@ check_is_DNA () {
 # check if file is DNA or AA
 check_is_DNA ${input}
 
-
 if [[ $isDNA == 0 ]]
-    # if not DNA, make prot database, run blastp
+    # if not DNA, run eggNOG untranslated
     then
         echo "eggNOG with prot..."
         python2.7 ~/eggNOG/eggnog-mapper-master/emapper.py -i ${input} --output output/eggNOG/${output} -m diamond --cpu ${cpu} -d 'none' --tax_scope 'auto' --go_evidence 'non-electronic' --target_orthologs 'all' --seed_ortholog_evalue 0.001 --seed_ortholog_score 60 --query-cover 20 --subject-cover 0
 
     else
+	# else if DNA, translate and run eggNOG
         echo "eggNOG with DNA..."
         python2.7 ~/eggNOG/eggnog-mapper-master/emapper.py --translate -i ${input} --output output/eggNOG/${output} -m diamond --cpu ${cpu} -d 'none' --tax_scope 'auto' --go_evidence 'non-electronic' --target_orthologs 'all' --seed_ortholog_evalue 0.001 --seed_ortholog_score 60 --query-cover 20 --subject-cover 0 
 fi

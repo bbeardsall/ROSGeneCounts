@@ -1,5 +1,4 @@
 # Test
-GENOMES = ["Fistulifera_solaris.aa", "Leptocylindrus_danicus-dna-trans"]
 IDS = glob_wildcards("DataIn/Genomes/{genomeName}.fasta")
 #EXTRASEQS = glob_wildcards("DataIn/ExtraSeqs/{extraSeqs}.fasta")
 
@@ -12,9 +11,9 @@ rule all:
         #expand("output/extraDatabases/{extraSeqs}.makeblastdb.done", extraSeqs=EXTRASEQS.extraSeqs),
         #"output/extraDatabases/ExtraSeqsSwissProtCombined.makeblastdb.done"
         #"output/extraDatabases/ExtraSeqsSwissProtCombined.makeblastdb.done"
-        expand("output/SpBlastResults/SPBlast_{genomeName}.csv", genomeName=IDS.genomeName)
+        #expand("output/SpBlastResults/SPBlast_{genomeName}.csv", genomeName=IDS.genomeName)
+        expand("output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv", genomeName = IDS.genomeName)
         
-
 rule blast_genome:
     input:
         genome="DataIn/Genomes/{genomeName}.fasta",
@@ -23,7 +22,7 @@ rule blast_genome:
         done=touch("output/databases/{genomeName}.makeblastdb.done"),
         results="output/results/results_{genomeName}.csv"
     shell:
-        "bash scripts/BlastTest.bash {input.probes} {input.genome} {output.results} output/databases/{wildcards.genomeName} {wildcards.genomeName}"
+        "bash scripts/BlastProbesGenomes.bash {input.probes} {input.genome} {output.results} output/databases/{wildcards.genomeName} {wildcards.genomeName}"
 
 rule get_hit_seqs:
     input:
@@ -34,13 +33,13 @@ rule get_hit_seqs:
     script:
         "scripts/get_hits.R"
 
-rule concatenate:
-    input:
-        hits=expand("output/hits/HITS_{genomeName}.fasta", genomeName=IDS.genomeName)
-    output:
-        "output/results/concatenated.fasta"
-    shell:
-        "cat {input.hits} > {output}"
+# rule concatenate:
+#     input:
+#         hits=expand("output/hits/HITS_{genomeName}.fasta", genomeName=IDS.genomeName)
+#     output:
+#         "output/results/concatenated.fasta"
+#     shell:
+#         "cat {input.hits} > {output}"
 
 rule eggNOG:
     input:
@@ -101,3 +100,12 @@ rule spBlast:
         4
     shell:
         "bash scripts/SpBlastSnake.bash {input.unknownHitsFile} output/extraDatabases/ExtraSeqsSwissProtCombined {output.SpResults} 4"
+
+rule getUniprotEC:
+    input:
+        CustomProtId="DataIn/CustomProtId.csv",
+        SpBlastData="output/SpBlastResults/SPBlast_{genomeName}.csv"
+    output:
+        JoinedUniprotBlast="output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv"
+    script:
+        "scripts/GetUniprotECsnake.R"

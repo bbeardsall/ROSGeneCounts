@@ -1,21 +1,27 @@
+# Script to parse BLAST result csv, 
+# and save hit sequences from corresponding Ome to a FASTA file
+
+# Brian Beardsall
+
+# Load libraries (messages suppressed to unclutter console)
 suppressPackageStartupMessages(library(tidyverse, quietly = TRUE))
 suppressPackageStartupMessages(library(Biostrings, quietly = TRUE))
 
+# Define input/output from snakemake object
 genomeFile <- snakemake@input[["genome"]]
-#genomeFile <- "DataIn/Genomes/Fistulifera_solaris.aa.fasta"
-#genomeName <- "Fistulifera_solaris.aa"
 genomeName <- snakemake@wildcards[["genomeName"]]
 resultFile <- snakemake@input[["blast_result"]]
-print(genomeName)
-#resultFile <- "output/results/results_Fistulifera_solaris.aa.csv"
 
+print(genomeName)
+
+# Define BLAST results csv headers
 BlastHeaders <- c("qseqid", "sseqid", "pident", "length", "mismatch", 
                   "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore", "sframe", "qframe")
 
 # Function to read in a blast results csv, and keep only the unique sequence IDs (since multiple probes can match the same sequence).
 read_blast_csv_unique_results <- function(InFilepath, ColNames) {
   read_csv(file = InFilepath, col_names = ColNames) %>%
-    # Add cols for filepath, name, genome/transcriptome name, and blast type.
+    # Add cols for filepath, filename
     mutate(Filepath = InFilepath,
            FileName = basename(InFilepath)) %>%
     # keep only unique sequences
@@ -25,7 +31,7 @@ read_blast_csv_unique_results <- function(InFilepath, ColNames) {
 UniqueBlastResults <- read_blast_csv_unique_results(resultFile, BlastHeaders)
 
 read_ome_as_AAStringSet <- function(filePath){
-  # Call AAStringSet constructor
+  # Call AAStringSet constructor on file
   OmeSeqs <- readBStringSet(filePath)
   
   # Shorten the sequence names to before the space, to match Blast output
@@ -39,13 +45,12 @@ read_ome_as_AAStringSet <- function(filePath){
 
 OmeSeqs <- read_ome_as_AAStringSet(genomeFile)
 
+# function to write blast hits to a FASTA file
 write_blast_hits_fasta <- function(InOmeName, OmeSeqs, OutFilePath){
   # get sequence IDs for blast hits from the current genome
   HitGenomeSeqIDs <- UniqueBlastResults %>%
     #filter(OmeName == InOmeName) %>%
     pull(sseqid)
-  
-  # access current genome XStringSet from the list  
   
   # subset only the blast hits
   HitOmeSeqs <- OmeSeqs[HitGenomeSeqIDs]
@@ -60,5 +65,6 @@ write_blast_hits_fasta <- function(InOmeName, OmeSeqs, OutFilePath){
   return(NULL)
 }
 
+# write to fasta
 write_blast_hits_fasta(genomeName, OmeSeqs, "output/hits")
 print("finished")
