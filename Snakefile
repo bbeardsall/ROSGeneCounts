@@ -54,16 +54,16 @@ rule eggNOG:
     
 rule joinROSEggNOG:
     input:
-        eggNOGannotations=expand("output/eggNOG/{genomeName}.emapper.annotations", genomeName=IDS.genomeName),
+        eggNOGannotations="output/eggNOG/{genomeName}.emapper.annotations",
         ROSinfo="DataIn/RosEC.txt"
     output:
-        JoinedHitAttributes="output/JoinedHitAttributes.csv"
+        JoinedHitAttributes="output/JoinedEggNOGROS_{genomeName}.csv"
     script:
         "scripts/JoinEggNOGAnnotations.R"
 
 rule getUmatchedHits:
     input:
-        JoinedHitAttributes="output/JoinedHitAttributes.csv",
+        JoinedHitAttributes="output/JoinedEggNOGROS_{genomeName}.csv",
         results="output/results/results_{genomeName}.csv",
         hits="output/hits/HITS_{genomeName}.fasta"
     output:

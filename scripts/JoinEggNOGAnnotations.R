@@ -6,22 +6,22 @@ suppressPackageStartupMessages(library(tidyverse))
 print("Joining eggNOG annotations with ROS enzyme ids...")
 
 # Get snakemake object input/output locations
-eggNOGfiles <- snakemake@input[["eggNOGannotations"]]
+eggNOGfile <- snakemake@input[["eggNOGannotations"]]
 ROSEcFile <- snakemake@input[["ROSinfo"]]
 outputCsv <- snakemake@output[["JoinedHitAttributes"]]
 
 # Read columns headers from first file
-EggnogHeader <- pull(read_csv(eggNOGfiles[1], n_max = 3))[3] %>%
+EggnogHeader <- pull(read_csv(eggNOGfile[1], n_max = 3))[3] %>%
   str_split("\\t") %>%
   unlist() %>%
   map_chr(~str_replace_all(., "#", ""))
 
-# Read all eggNOG annotation files into one df
-eggNOGData <- map(eggNOGfiles, read_tsv, comment = "#", col_names = EggnogHeader) %>%
-  bind_rows() %>%
+# Read eggNOG annotation file
+eggNOGData <- read_tsv(eggNOGfile, skip = 4, col_names = EggnogHeader) %>%
   # split the hit name into the genome name and gene ID
   separate(col = "query_name", into = c("Ome", "GeneId"), 
            sep = "___", remove = FALSE)
+
 
 # Read ROS enzyme info tsv file
 ROSEC <- read_tsv(ROSEcFile)
