@@ -22,7 +22,6 @@ eggNOGData <- read_tsv(eggNOGfile, skip = 4, col_names = EggnogHeader) %>%
   separate(col = "query_name", into = c("Ome", "GeneId"), 
            sep = "___", remove = FALSE)
 
-
 # Read ROS enzyme info tsv file
 ROSEC <- read_tsv(ROSEcFile)
 

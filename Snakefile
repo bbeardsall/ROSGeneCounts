@@ -12,8 +12,9 @@ rule all:
         #"output/extraDatabases/ExtraSeqsSwissProtCombined.makeblastdb.done"
         #"output/extraDatabases/ExtraSeqsSwissProtCombined.makeblastdb.done"
         #expand("output/SpBlastResults/SPBlast_{genomeName}.csv", genomeName=IDS.genomeName)
-        expand("output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv", genomeName = IDS.genomeName)
-        
+        #expand("output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv", genomeName = IDS.genomeName),
+        #expand("output/JoinedEggNOGROS/JoinedEggNOGROS_{genomeName}.csv", genomeName = IDS.genomeName)
+        "output/combinedHits.csv"
 rule blast_genome:
     input:
         genome="DataIn/Genomes/{genomeName}.fasta",
@@ -57,13 +58,13 @@ rule joinROSEggNOG:
         eggNOGannotations="output/eggNOG/{genomeName}.emapper.annotations",
         ROSinfo="DataIn/RosEC.txt"
     output:
-        JoinedHitAttributes="output/JoinedEggNOGROS_{genomeName}.csv"
+        JoinedHitAttributes="output/JoinedEggNOGROS/JoinedEggNOGROS_{genomeName}.csv"
     script:
         "scripts/JoinEggNOGAnnotations.R"
 
 rule getUmatchedHits:
     input:
-        JoinedHitAttributes="output/JoinedEggNOGROS_{genomeName}.csv",
+        JoinedHitAttributes="output/JoinedEggNOGROS/JoinedEggNOGROS_{genomeName}.csv",
         results="output/results/results_{genomeName}.csv",
         hits="output/hits/HITS_{genomeName}.fasta"
     output:
@@ -109,3 +110,13 @@ rule getUniprotEC:
         JoinedUniprotBlast="output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv"
     script:
         "scripts/GetUniprotECsnake.R"
+
+rule combineHits:
+    input:
+        JoinedEggNOGannotations=expand("output/JoinedEggNOGROS/JoinedEggNOGROS_{genomeName}.csv", genomeName = IDS.genomeName),
+        JoinedUniprotBlasts=expand("output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv", genomeName = IDS.genomeName),
+        ROSinfo="DataIn/RosEC.txt"
+    output:
+        combinedHits="output/combinedHits.csv"
+    script:
+        "scripts/combineSPEggNOGHits.R"
