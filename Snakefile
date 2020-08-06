@@ -1,5 +1,6 @@
 # Test
 IDS = glob_wildcards("DataIn/Genomes/{genomeName}.fasta")
+Isoforms = glob_wildcards("DataIn/Isoforms/IsoformSequences/{Isoform}.fasta")
 #EXTRASEQS = glob_wildcards("DataIn/ExtraSeqs/{extraSeqs}.fasta")
 
 rule all:
@@ -14,7 +15,8 @@ rule all:
         #expand("output/SpBlastResults/SPBlast_{genomeName}.csv", genomeName=IDS.genomeName)
         #expand("output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv", genomeName = IDS.genomeName),
         #expand("output/JoinedEggNOGROS/JoinedEggNOGROS_{genomeName}.csv", genomeName = IDS.genomeName)
-        "output/combinedHits.csv"
+        "output/combinedHits.csv",
+        expand("output/IsoformDatabases/{Isoform}.makeblastdb.done", Isoform = Isoforms.Isoform)
 rule blast_genome:
     input:
         genome="DataIn/Genomes/{genomeName}.fasta",
@@ -120,3 +122,11 @@ rule combineHits:
         combinedHits="output/combinedHits.csv"
     script:
         "scripts/combineSPEggNOGHits.R"
+
+rule makeBlastDbIsoforms:
+    input:
+        "DataIn/Isoforms/IsoformSequences/{Isoform}.fasta"
+    output:
+        done=touch("output/IsoformDatabases/{Isoform}.makeblastdb.done"),
+    shell:
+        "makeblastdb -in {input} -out output/IsoformDatabases/{wildcards.Isoform} -title {wildcards.Isoform} -dbtype prot"
