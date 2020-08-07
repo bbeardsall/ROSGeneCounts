@@ -16,7 +16,9 @@ rule all:
         #expand("output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv", genomeName = IDS.genomeName),
         #expand("output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv", genomeName = IDS.genomeName)
         "output/IsoformDatabase/Isoforms.makeblastdb.done",
-        expand("output/IsoformFilteredSeqs/IsoformSeqs_{genomeName}.fasta", genomeName = IDS.genomeName)
+        expand("output/IsoformFilteredSeqs/IsoformSeqs_{genomeName}.fasta", genomeName = IDS.genomeName),
+        expand("output/isoformBlastResults/isoformBlastResults_{genomeName}.csv", genomeName = IDS.genomeName),
+        expand("output/IsoformSpROSEggNOG/IsoformSpROSEggNOG_{genomeName}.csv", genomeName = IDS.genomeName)
         #expand("output/IsoformFilteredSeqs/{Isoform}_{genomeName}_seqs.fasta", genomeName = IDS.genomeName, Isoform = Isoforms.Isoform)
         #expand("output/JoinedEggNOGROS/JoinedEggNOGROS_{genomeName}.csv", genomeName = IDS.genomeName)
         #"output/combinedHits.csv",
@@ -155,4 +157,23 @@ rule getIsoformSeqs:
         isoformSeqs="output/IsoformFilteredSeqs/IsoformSeqs_{genomeName}.fasta"
     script:
         "scripts/getIsoformSeqs.R"
+
+rule blastIsoformSeqs:
+    input:
+        isoformSeqs="output/IsoformFilteredSeqs/IsoformSeqs_{genomeName}.fasta",
+        isoformDbDone="output/IsoformDatabase/Isoforms.makeblastdb.done"
+    output:
+        isoformBlastResults="output/isoformBlastResults/isoformBlastResults_{genomeName}.csv"
+    shell:
+        "bash scripts/CheckNuclAndBlast.bash {input.isoformSeqs} output/IsoformDatabase/IsoformDB {output.isoformBlastResults} 4"
+
+rule joinIsoformBlastSpROSEggNOG:
+    input:
+        isoformBlastResults="output/isoformBlastResults/isoformBlastResults_{genomeName}.csv",
+        IsoformInfo="DataIn/Isoforms/IsoformInfo.csv",
+        SpROSeggNOG="output/SpROSEggNOG/SpROSEggNOG_{genomeName}.csv"
+    output:
+        IsoformSpROSEggNOG="output/IsoformSpROSEggNOG/IsoformSpROSEggNOG_{genomeName}.csv"
+    script:
+        "scripts/joinIsoformBlastInfo.R"
 
