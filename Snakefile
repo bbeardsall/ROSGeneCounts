@@ -12,11 +12,13 @@ rule all:
         #expand("output/extraDatabases/{extraSeqs}.makeblastdb.done", extraSeqs=EXTRASEQS.extraSeqs),
         #"output/extraDatabases/ExtraSeqsSwissProtCombined.makeblastdb.done"
         #"output/extraDatabases/ExtraSeqsSwissProtCombined.makeblastdb.done"
-        #expand("output/SpBlastResults/SPBlast_{genomeName}.csv", genomeName=IDS.genomeName)
+        #expand("output/SpBlastResults/SPBlast_{genomeName}.csv", genomeName=IDS.genomeName),
         #expand("output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv", genomeName = IDS.genomeName),
+        expand("output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv", genomeName = IDS.genomeName)
         #expand("output/JoinedEggNOGROS/JoinedEggNOGROS_{genomeName}.csv", genomeName = IDS.genomeName)
-        "output/combinedHits.csv",
-        expand("output/IsoformDatabases/{Isoform}.makeblastdb.done", Isoform = Isoforms.Isoform)
+        #"output/combinedHits.csv",
+        #expand("output/SpROSEggNOG/SpROSEggNOG_{genomeName}.csv", genomeName = IDS.genomeName)
+        #expand("output/IsoformDatabases/{Isoform}.makeblastdb.done", Isoform = Isoforms.Isoform)
 rule blast_genome:
     input:
         genome="DataIn/Genomes/{genomeName}.fasta",
@@ -113,15 +115,26 @@ rule getUniprotEC:
     script:
         "scripts/GetUniprotECsnake.R"
 
-rule combineHits:
+rule joinSpROSEggNOG:
     input:
-        JoinedEggNOGannotations=expand("output/JoinedEggNOGROS/JoinedEggNOGROS_{genomeName}.csv", genomeName = IDS.genomeName),
-        JoinedUniprotBlasts=expand("output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv", genomeName = IDS.genomeName),
+        JoinedUniprotBlasts="output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv",
         ROSinfo="DataIn/RosEC.txt"
     output:
-        combinedHits="output/combinedHits.csv"
+        JoinedSpROSEggNOG="output/SpROSEggNOG/SpROSEggNOG_{genomeName}.csv"
     script:
-        "scripts/combineSPEggNOGHits.R"
+        "scripts/joinSpROSEggNOG.R"
+        
+
+
+# rule combineHits:
+#     input:
+#         JoinedEggNOGannotations=expand("output/JoinedEggNOGROS/JoinedEggNOGROS_{genomeName}.csv", genomeName = IDS.genomeName),
+#         JoinedUniprotBlasts=expand("output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv", genomeName = IDS.genomeName),
+#         ROSinfo="DataIn/RosEC.txt"
+#     output:
+#         combinedHits="output/combinedHits.csv"
+#     script:
+#         "scripts/combineSPEggNOGHits.R"
 
 rule makeBlastDbIsoforms:
     input:
