@@ -6,8 +6,15 @@ suppressPackageStartupMessages(library(tidyverse))
 # Get snakemake object input/output locations
 #JoinedEggNOGfiles <- snakemake@input[["JoinedEggNOGannotations"]]
 #JoinedEggNOGfiles <- list.files("output/JoinedEggNOGROS", full.names = TRUE)
-UniprotBlastfiles <- snakemake@input[["JoinedUniprotBlasts"]]
+
+JoinedEggNOGfile <- snakemake@input[["JoinedEggNOGROS"]]
+UniprotBlastfile <- snakemake@input[["JoinedUniprotBlast"]]
 ROSEcFile <- snakemake@input[["ROSinfo"]]
+
+# JoinedEggNOGfile <- "output/JoinedEggNOGROS/JoinedEggNOGROS_Chaetoceros_curvisetus-aa-trans.csv"
+# UniprotBlastfile <- "output/JoinedUniprotBlastData/JoinedUniprotBlast_Chaetoceros_curvisetus-aa-trans.csv"
+# ROSEcFile <- "DataIn/RosEC.txt"
+
 #UniprotBlastfiles <- list.files("output/JoinedUniprotBlastData", full.names = TRUE)
 #ROSEcFile <- "DataIn/RosEC.txt"
 OutputCsv <- snakemake@output[["JoinedSpROSEggNOG"]]
@@ -22,7 +29,7 @@ LongRosEC <- read_tsv(ROSEcFile) %>%
 RosECVector <- LongRosEC %>%
   pull(EC)
 
-JoinedUniprotBlastData <- read_csv(UniprotBlastfiles, col_types = cols(.default = "c")) %>%
+JoinedUniprotBlastData <- read_csv(UniprotBlastfile, col_types = cols(.default = "c")) %>%
   type_convert() %>%
   # remove NA EC #s
   filter(!is.na(EC)) %>%
@@ -36,5 +43,9 @@ JoinedUniprotBlastData <- read_csv(UniprotBlastfiles, col_types = cols(.default 
   filter(EC %in% RosECVector) %>%
   left_join(LongRosEC, by = "EC")
 
-write_csv(JoinedUniprotBlastData, OutputCsv)
+EggNOGRosData <- read_csv(JoinedEggNOGfile)
+
+JoinedSpROSEggNOG <- rbind(JoinedUniprotBlastData, EggNOGRosData)
+
+write_csv(JoinedSpROSEggNOG, OutputCsv)
 

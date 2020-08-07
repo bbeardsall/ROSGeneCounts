@@ -30,7 +30,8 @@ print(genomeName)
 BlastHeaders <- c("qseqid", "sseqid", "pident", "length", "mismatch", 
                   "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore", "sframe", "qframe")
 
-IsoformInfo <- read_csv(IsoformInfoFile)
+IsoformInfo <- read_csv(IsoformInfoFile) %>%
+  select(SequenceId, ROSEnzymeIsoform)
 
 isoformBlastResultsInitial <- read_csv(isoformBlastResultsFile, col_names = BlastHeaders)
 

@@ -5,6 +5,7 @@ Isoforms = glob_wildcards("DataIn/Isoforms/IsoformSequences/{Isoform}.fasta")
 
 rule all:
     input:
+        #expand("output/SpROSEggNOG/SpROSEggNOG_{genomeName}.csv", genomeName = IDS.genomeName)
         #"output/results/concatenated.fasta" 
         #expand("output/eggNOG/{genomeName}.emapper.annotations", genomeName=IDS.genomeName)
         #"output/JoinedHitAttributes.csv"
@@ -15,15 +16,17 @@ rule all:
         #expand("output/SpBlastResults/SPBlast_{genomeName}.csv", genomeName=IDS.genomeName),
         #expand("output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv", genomeName = IDS.genomeName),
         #expand("output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv", genomeName = IDS.genomeName)
-        "output/IsoformDatabase/Isoforms.makeblastdb.done",
-        expand("output/IsoformFilteredSeqs/IsoformSeqs_{genomeName}.fasta", genomeName = IDS.genomeName),
-        expand("output/isoformBlastResults/isoformBlastResults_{genomeName}.csv", genomeName = IDS.genomeName),
-        expand("output/IsoformSpROSEggNOG/IsoformSpROSEggNOG_{genomeName}.csv", genomeName = IDS.genomeName)
         #expand("output/IsoformFilteredSeqs/{Isoform}_{genomeName}_seqs.fasta", genomeName = IDS.genomeName, Isoform = Isoforms.Isoform)
         #expand("output/JoinedEggNOGROS/JoinedEggNOGROS_{genomeName}.csv", genomeName = IDS.genomeName)
         #"output/combinedHits.csv",
-        #expand("output/SpROSEggNOG/SpROSEggNOG_{genomeName}.csv", genomeName = IDS.genomeName)
         #expand("output/IsoformDatabases/{Isoform}.makeblastdb.done", Isoform = Isoforms.Isoform)
+        # "output/IsoformDatabase/Isoforms.makeblastdb.done",
+        # expand("output/IsoformFilteredSeqs/IsoformSeqs_{genomeName}.fasta", genomeName = IDS.genomeName),
+        # expand("output/isoformBlastResults/isoformBlastResults_{genomeName}.csv", genomeName = IDS.genomeName),
+        # expand("output/IsoformSpROSEggNOG/IsoformSpROSEggNOG_{genomeName}.csv", genomeName = IDS.genomeName),
+        "output/combinedHits.csv"
+        
+
 rule blast_genome:
     input:
         genome="DataIn/Genomes/{genomeName}.fasta",
@@ -122,8 +125,10 @@ rule getUniprotEC:
 
 rule joinSpROSEggNOG:
     input:
-        JoinedUniprotBlasts="output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv",
-        ROSinfo="DataIn/RosEC.txt"
+        JoinedUniprotBlast="output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv",
+        ROSinfo="DataIn/RosEC.txt",
+        JoinedEggNOGROS="output/JoinedEggNOGROS/JoinedEggNOGROS_{genomeName}.csv"
+
     output:
         JoinedSpROSEggNOG="output/SpROSEggNOG/SpROSEggNOG_{genomeName}.csv"
     script:
@@ -176,4 +181,12 @@ rule joinIsoformBlastSpROSEggNOG:
         IsoformSpROSEggNOG="output/IsoformSpROSEggNOG/IsoformSpROSEggNOG_{genomeName}.csv"
     script:
         "scripts/joinIsoformBlastInfo.R"
+
+rule combineAllHits:
+    input:
+        JoinedEggIsoformSpROSEggNOG=expand("output/IsoformSpROSEggNOG/IsoformSpROSEggNOG_{genomeName}.csv", genomeName = IDS.genomeName),
+    output:
+        combinedHits="output/combinedHits.csv"
+    script:
+        "scripts/combineAllHits.R"
 
