@@ -24,7 +24,7 @@ check_is_DNA () {
 	for (( i=0; i<${#TestSequence}; i++ ))
 		do
         # If a non-DNA character (A,T,G,C,N), then not DNA
-		if [[ ${TestSequence:$i:1} =~ [^ATGCN] ]]
+		if [[ ${TestSequence:$i:1} =~ [^ATGCNatgcn] ]]
 			then
 				isDNA=0
 		fi
