@@ -14,7 +14,10 @@ rule all:
         #"output/extraDatabases/ExtraSeqsSwissProtCombined.makeblastdb.done"
         #expand("output/SpBlastResults/SPBlast_{genomeName}.csv", genomeName=IDS.genomeName),
         #expand("output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv", genomeName = IDS.genomeName),
-        expand("output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv", genomeName = IDS.genomeName)
+        #expand("output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv", genomeName = IDS.genomeName)
+        "output/IsoformDatabase/Isoforms.makeblastdb.done",
+        expand("output/IsoformFilteredSeqs/IsoformSeqs_{genomeName}.fasta", genomeName = IDS.genomeName)
+        #expand("output/IsoformFilteredSeqs/{Isoform}_{genomeName}_seqs.fasta", genomeName = IDS.genomeName, Isoform = Isoforms.Isoform)
         #expand("output/JoinedEggNOGROS/JoinedEggNOGROS_{genomeName}.csv", genomeName = IDS.genomeName)
         #"output/combinedHits.csv",
         #expand("output/SpROSEggNOG/SpROSEggNOG_{genomeName}.csv", genomeName = IDS.genomeName)
@@ -123,8 +126,6 @@ rule joinSpROSEggNOG:
         JoinedSpROSEggNOG="output/SpROSEggNOG/SpROSEggNOG_{genomeName}.csv"
     script:
         "scripts/joinSpROSEggNOG.R"
-        
-
 
 # rule combineHits:
 #     input:
@@ -138,8 +139,20 @@ rule joinSpROSEggNOG:
 
 rule makeBlastDbIsoforms:
     input:
-        "DataIn/Isoforms/IsoformSequences/{Isoform}.fasta"
+        IsoformSeqs=expand("DataIn/Isoforms/IsoformSequences/{Isoform}.fasta", Isoform = Isoforms.Isoform)
     output:
-        done=touch("output/IsoformDatabases/{Isoform}.makeblastdb.done"),
+        done=touch("output/IsoformDatabase/Isoforms.makeblastdb.done"),
     shell:
-        "makeblastdb -in {input} -out output/IsoformDatabases/{wildcards.Isoform} -title {wildcards.Isoform} -dbtype prot"
+        " cat {input.IsoformSeqs} | makeblastdb -out output/IsoformDatabase/IsoformDB -title IsoformDB -dbtype prot"
+
+
+rule getIsoformSeqs:
+    input:
+        SpROSeggNOG="output/SpROSEggNOG/SpROSEggNOG_{genomeName}.csv",
+        IsoformInfo="DataIn/Isoforms/IsoformInfo.csv",
+        genome="DataIn/Genomes/{genomeName}.fasta"
+    output:
+        isoformSeqs="output/IsoformFilteredSeqs/IsoformSeqs_{genomeName}.fasta"
+    script:
+        "scripts/getIsoformSeqs.R"
+
