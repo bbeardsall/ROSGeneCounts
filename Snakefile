@@ -1,27 +1,35 @@
 # Snakefile for ROSGeneCounts
 # Brian Beardsall
 
+configfile: "config.yaml"
+
 IDS = glob_wildcards("DataIn/Genomes/{genomeName}.fasta")
 Isoforms = glob_wildcards("DataIn/Isoforms/IsoformSequences/{Isoform}.fasta")
 
-
+# default rule to generate final output
 rule all:
     input:
         #expand("output/results/results_{genomeName}.csv", genomeName = IDS.genomeName)
-        "output/combinedHits.csv"
-        
-rule BlastGenome:
+        #"output/combinedHits.csv"
+        "output/results/results_Skeletonema_menzelii_CCMP793-aa-trans.csv"
+
+# Bash script to blast probe sequences against omes
+rule BlastProbesGenomes:
     input:
         genome="DataIn/Genomes/{genomeName}.fasta",
         probes="DataIn/enzyme_probes_noSpaces_combined.txt"
     output:
         done=touch("output/databases/{genomeName}.makeblastdb.done"),
         results="output/results/results_{genomeName}.csv"
-    log: "logs/BlastGenome/{genomeName}.log"
+    params:
+        evalue=config["BlastProbesGenomes"]["evalue"]
+    log: "logs/BlastProbesGenomes/{genomeName}.log"
     shell:
-        "bash scripts/BlastProbesGenomes.bash {input.probes} {input.genome} {output.results} output/databases/{wildcards.genomeName} {wildcards.genomeName}"
+        "bash scripts/BlastProbesGenomes.bash {input.probes} {input.genome} {output.results} "
+        "output/databases/{wildcards.genomeName} {wildcards.genomeName} {params.evalue}"
 
-rule GetHitSeqs:
+# R script to parse csv of blast results, save hits to a fasta file
+rule GetProbeHitSeqs:
     input:
         blast_result="output/results/results_{genomeName}.csv",
         genome="DataIn/Genomes/{genomeName}.fasta"
@@ -35,10 +43,10 @@ rule eggNOG:
     input:
         hitsFile="output/hits/HITS_{genomeName}.fasta"
     output:
-        "output/eggNOG/{genomeName}.emapper.annotations"
+        protected("output/eggNOG/{genomeName}.emapper.annotations")
     log: "logs/eggNOG/{genomeName}.log"
     threads:
-        8
+        config["eggNOG"]["threads"]
     shell:
         "bash scripts/eggNOG.bash {input.hitsFile} {wildcards.genomeName} {threads}"
         #"python2.7 ~/eggNOG/eggnog-mapper-master/emapper.py --translate -i {input.hitsFile} --output output/eggNOG/{wildcards.genomeName} -m diamond --cpu {threads} -d 'none' --tax_scope 'auto' --go_evidence 'non-electronic' --target_orthologs 'all' --seed_ortholog_evalue 0.001 --seed_ortholog_score 60 --query-cover 20 --subject-cover 0"

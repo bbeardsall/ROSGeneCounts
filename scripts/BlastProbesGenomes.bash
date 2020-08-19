@@ -9,6 +9,7 @@ genome="$2"
 results="$3"
 database="$4"
 genomeName="$5"
+evalue="$6"
 
 # function to parse first sequence of FASTA, determine if AA or DNA
 # sets isDNA = 1 if DNA, 0 if not
@@ -16,6 +17,7 @@ check_is_DNA () {
     # number of seqs to check
 	NSEQS=1
     # get the first n seqs, remove header line, remove all non alphanumeric characters
+    # see https://ro-che.info/articles/2016-08-23-fasta-first-n-sequences
 	FirstSequence=$(awk "/^>/ {n++} n>$NSEQS {exit} {print}" $1 | awk '!/^>/ { print; }' | tr -cd '[:alnum:]' )
 
     # subset first n characters
@@ -53,16 +55,14 @@ if [[ $isDNA == 0 ]]
         echo "make protein database"
         makeblastdb -in ${genome} -out ${database} -title ${genomeName} -dbtype prot
         echo blastp
-        blastp -db ${database} -query ${probes} -out ${results} -outfmt "10 std qframe sframe" -evalue 0.5
-        #echo "is DNA"  > ${output}  
+        blastp -db ${database} -query ${probes} -out ${results} -outfmt "10 std qframe sframe" -evalue ${evalue} 
 
     # else if DNA, make nucl database, run tblastn
     else
         echo "make protein database"
         makeblastdb -in ${genome} -out ${database} -title ${genomeName} -dbtype nucl
         echo tblastn
-        tblastn -db ${database} -query ${probes} -out ${results} -outfmt "10 std qframe sframe" -evalue 0.5
-        #echo "not DNA" > ${output}  
+        tblastn -db ${database} -query ${probes} -out ${results} -outfmt "10 std qframe sframe" -evalue ${evalue}
 fi
 echo --------------------------
 
