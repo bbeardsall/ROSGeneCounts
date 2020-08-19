@@ -1,129 +1,112 @@
-# Test
+# Snakefile for ROSGeneCounts
+# Brian Beardsall
+
 IDS = glob_wildcards("DataIn/Genomes/{genomeName}.fasta")
 Isoforms = glob_wildcards("DataIn/Isoforms/IsoformSequences/{Isoform}.fasta")
-#EXTRASEQS = glob_wildcards("DataIn/ExtraSeqs/{extraSeqs}.fasta")
+
 
 rule all:
     input:
-        #expand("output/SpROSEggNOG/SpROSEggNOG_{genomeName}.csv", genomeName = IDS.genomeName)
-        #"output/results/concatenated.fasta" 
-        #expand("output/eggNOG/{genomeName}.emapper.annotations", genomeName=IDS.genomeName)
-        #"output/JoinedHitAttributes.csv"
-        #expand("output/unknownHits/UnknownHits_{genomeName}.fasta", genomeName=IDS.genomeName)
-        #expand("output/extraDatabases/{extraSeqs}.makeblastdb.done", extraSeqs=EXTRASEQS.extraSeqs),
-        #"output/extraDatabases/ExtraSeqsSwissProtCombined.makeblastdb.done"
-        #"output/extraDatabases/ExtraSeqsSwissProtCombined.makeblastdb.done"
-        #expand("output/SpBlastResults/SPBlast_{genomeName}.csv", genomeName=IDS.genomeName),
-        #expand("output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv", genomeName = IDS.genomeName),
-        #expand("output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv", genomeName = IDS.genomeName)
-        #expand("output/IsoformFilteredSeqs/{Isoform}_{genomeName}_seqs.fasta", genomeName = IDS.genomeName, Isoform = Isoforms.Isoform)
-        #expand("output/JoinedEggNOGROS/JoinedEggNOGROS_{genomeName}.csv", genomeName = IDS.genomeName)
-        #"output/combinedHits.csv",
-        #expand("output/IsoformDatabases/{Isoform}.makeblastdb.done", Isoform = Isoforms.Isoform)
-        # "output/IsoformDatabase/Isoforms.makeblastdb.done",
-        # expand("output/IsoformFilteredSeqs/IsoformSeqs_{genomeName}.fasta", genomeName = IDS.genomeName),
-        # expand("output/isoformBlastResults/isoformBlastResults_{genomeName}.csv", genomeName = IDS.genomeName),
-        # expand("output/IsoformSpROSEggNOG/IsoformSpROSEggNOG_{genomeName}.csv", genomeName = IDS.genomeName),
+        #expand("output/results/results_{genomeName}.csv", genomeName = IDS.genomeName)
         "output/combinedHits.csv"
         
-
-rule blast_genome:
+rule BlastGenome:
     input:
         genome="DataIn/Genomes/{genomeName}.fasta",
         probes="DataIn/enzyme_probes_noSpaces_combined.txt"
     output:
         done=touch("output/databases/{genomeName}.makeblastdb.done"),
         results="output/results/results_{genomeName}.csv"
+    log: "logs/BlastGenome/{genomeName}.log"
     shell:
         "bash scripts/BlastProbesGenomes.bash {input.probes} {input.genome} {output.results} output/databases/{wildcards.genomeName} {wildcards.genomeName}"
 
-rule get_hit_seqs:
+rule GetHitSeqs:
     input:
         blast_result="output/results/results_{genomeName}.csv",
         genome="DataIn/Genomes/{genomeName}.fasta"
     output:
         hits="output/hits/HITS_{genomeName}.fasta"
+    log: "logs/GetHitSeqs/{genomeName}.log"
     script:
         "scripts/get_hits.R"
-
-# rule concatenate:
-#     input:
-#         hits=expand("output/hits/HITS_{genomeName}.fasta", genomeName=IDS.genomeName)
-#     output:
-#         "output/results/concatenated.fasta"
-#     shell:
-#         "cat {input.hits} > {output}"
 
 rule eggNOG:
     input:
         hitsFile="output/hits/HITS_{genomeName}.fasta"
     output:
         "output/eggNOG/{genomeName}.emapper.annotations"
+    log: "logs/eggNOG/{genomeName}.log"
     threads:
         8
     shell:
-        "bash scripts/eggNOG.bash {input.hitsFile} {wildcards.genomeName} 8"
-        #"python2.7 ~/eggNOG/eggnog-mapper-master/emapper.py --translate -i {input.hitsFile} --output output/eggNOG/{wildcards.genomeName} -m diamond --cpu 4 -d 'none' --tax_scope 'auto' --go_evidence 'non-electronic' --target_orthologs 'all' --seed_ortholog_evalue 0.001 --seed_ortholog_score 60 --query-cover 20 --subject-cover 0"
+        "bash scripts/eggNOG.bash {input.hitsFile} {wildcards.genomeName} {threads}"
+        #"python2.7 ~/eggNOG/eggnog-mapper-master/emapper.py --translate -i {input.hitsFile} --output output/eggNOG/{wildcards.genomeName} -m diamond --cpu {threads} -d 'none' --tax_scope 'auto' --go_evidence 'non-electronic' --target_orthologs 'all' --seed_ortholog_evalue 0.001 --seed_ortholog_score 60 --query-cover 20 --subject-cover 0"
     
-rule joinROSEggNOG:
+rule JoinROSEggNOG:
     input:
         eggNOGannotations="output/eggNOG/{genomeName}.emapper.annotations",
         ROSinfo="DataIn/RosEC.txt"
     output:
         JoinedHitAttributes="output/JoinedEggNOGROS/JoinedEggNOGROS_{genomeName}.csv"
+    log: "logs/JoinROSEggNOG/{genomeName}.log"
     script:
         "scripts/JoinEggNOGAnnotations.R"
 
-rule getUmatchedHits:
+rule GetUnmatchedHits:
     input:
         JoinedHitAttributes="output/JoinedEggNOGROS/JoinedEggNOGROS_{genomeName}.csv",
         results="output/results/results_{genomeName}.csv",
         hits="output/hits/HITS_{genomeName}.fasta"
     output:
         unknownHitsFile="output/unknownHits/UnknownHits_{genomeName}.fasta"
+    log: "logs/GetUnmatchedHits/{genomeName}.log"
     script:
         "scripts/GetUnmatchedHits.R"
 
-rule makeBlastDbExtraSeqs:
+rule MakeBlastDbExtraSeqs:
     input:
         "DataIn/ExtraSequences.fasta"
     output:
         touch("output/extraDatabases/ExtraSequences.makeblastdb.done")
+    log: "logs/MakeBlastDbExtraSeqs/MakeBlastDbExtraSeqs.log"
     shell:
         "makeblastdb -in {input} -out output/extraDatabases/ExtraSequences -title ExtraSequences -dbtype prot"
 
-rule combineSpExtraSeqsDB:
+rule CombineSpExtraSeqsDB:
     input:
         #doneDbs="output/databases/{extraSeqs}.makeblastdb.done",
         Sp="DataIn/SpDatabase/swissprot.00.phr",
         ExtraDB="output/extraDatabases/ExtraSequences.makeblastdb.done"
-        
     output:
-        touch("output/extraDatabases/ExtraSeqsSwissProtCombined.makeblastdb.done"),
+        touch("output/extraDatabases/ExtraSeqsSwissProtCombined.makeblastdb.done")
+    log: "logs/CombineSpExtraSeqsDB/CombineSpExtraSeqsDB.log"
     shell:
         "blastdb_aliastool -dblist 'output/extraDatabases/ExtraSequences DataIn/SpDatabase/swissprot' -dbtype prot -out output/extraDatabases/ExtraSeqsSwissProtCombined -title ExtraSeqsSwissProtCombined"
 
-rule spBlast:
+rule SpBlast:
     input:
         unknownHitsFile="output/unknownHits/UnknownHits_{genomeName}.fasta",
         databaseDone="output/extraDatabases/ExtraSeqsSwissProtCombined.makeblastdb.done"
     output:
         SpResults="output/SpBlastResults/SPBlast_{genomeName}.csv"
+    log: "logs/SpBlast/{genomeName}.log"
     threads:
         4
     shell:
         "bash scripts/SpBlastSnake.bash {input.unknownHitsFile} output/extraDatabases/ExtraSeqsSwissProtCombined {output.SpResults} 4"
 
-rule getUniprotEC:
+rule GetUniprotEC:
     input:
         CustomProtId="DataIn/CustomProtId.csv",
         SpBlastData="output/SpBlastResults/SPBlast_{genomeName}.csv"
     output:
         JoinedUniprotBlast="output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv"
+    log: "logs/GetUniprotEC/{genomeName}.log"
     script:
         "scripts/GetUniprotECsnake.R"
 
-rule joinSpROSEggNOG:
+rule JoinSpROSEggNOG:
     input:
         JoinedUniprotBlast="output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv",
         ROSinfo="DataIn/RosEC.txt",
@@ -131,62 +114,58 @@ rule joinSpROSEggNOG:
 
     output:
         JoinedSpROSEggNOG="output/SpROSEggNOG/SpROSEggNOG_{genomeName}.csv"
+    log: "logs/JoinSpROSEggNOG/{genomeName}.log"
     script:
         "scripts/joinSpROSEggNOG.R"
 
-# rule combineHits:
-#     input:
-#         JoinedEggNOGannotations=expand("output/JoinedEggNOGROS/JoinedEggNOGROS_{genomeName}.csv", genomeName = IDS.genomeName),
-#         JoinedUniprotBlasts=expand("output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv", genomeName = IDS.genomeName),
-#         ROSinfo="DataIn/RosEC.txt"
-#     output:
-#         combinedHits="output/combinedHits.csv"
-#     script:
-#         "scripts/combineSPEggNOGHits.R"
-
-rule makeBlastDbIsoforms:
+rule MakeBlastDbIsoforms:
     input:
         IsoformSeqs=expand("DataIn/Isoforms/IsoformSequences/{Isoform}.fasta", Isoform = Isoforms.Isoform)
     output:
-        done=touch("output/IsoformDatabase/Isoforms.makeblastdb.done"),
+        done=touch("output/IsoformDatabase/Isoforms.makeblastdb.done")
+    log: "logs/MakeBlastDbIsoforms/MakeBlastDbIsoforms.log"
     shell:
         " cat {input.IsoformSeqs} | makeblastdb -out output/IsoformDatabase/IsoformDB -title IsoformDB -dbtype prot"
 
 
-rule getIsoformSeqs:
+rule GetIsoformSeqs:
     input:
         SpROSeggNOG="output/SpROSEggNOG/SpROSEggNOG_{genomeName}.csv",
         IsoformInfo="DataIn/Isoforms/IsoformInfo.csv",
         genome="DataIn/Genomes/{genomeName}.fasta"
     output:
         isoformSeqs="output/IsoformFilteredSeqs/IsoformSeqs_{genomeName}.fasta"
+    log: "logs/GetIsoformSeqs/{genomeName}.log"
     script:
         "scripts/getIsoformSeqs.R"
 
-rule blastIsoformSeqs:
+rule BlastIsoformSeqs:
     input:
         isoformSeqs="output/IsoformFilteredSeqs/IsoformSeqs_{genomeName}.fasta",
         isoformDbDone="output/IsoformDatabase/Isoforms.makeblastdb.done"
     output:
         isoformBlastResults="output/isoformBlastResults/isoformBlastResults_{genomeName}.csv"
+    log: "logs/BlastIsoformSeqs/{genomeName}.log"
     shell:
         "bash scripts/CheckNuclAndBlast.bash {input.isoformSeqs} output/IsoformDatabase/IsoformDB {output.isoformBlastResults} 4"
 
-rule joinIsoformBlastSpROSEggNOG:
+rule JoinIsoformBlastSpROSEggNOG:
     input:
         isoformBlastResults="output/isoformBlastResults/isoformBlastResults_{genomeName}.csv",
         IsoformInfo="DataIn/Isoforms/IsoformInfo.csv",
         SpROSeggNOG="output/SpROSEggNOG/SpROSEggNOG_{genomeName}.csv"
     output:
         IsoformSpROSEggNOG="output/IsoformSpROSEggNOG/IsoformSpROSEggNOG_{genomeName}.csv"
+    log: "logs/JoinIsoformBlastSpROSEggNOG/{genomeName}.log"
     script:
         "scripts/joinIsoformBlastInfo.R"
 
-rule combineAllHits:
+rule CombineAllHits:
     input:
         JoinedEggIsoformSpROSEggNOG=expand("output/IsoformSpROSEggNOG/IsoformSpROSEggNOG_{genomeName}.csv", genomeName = IDS.genomeName),
     output:
         combinedHits="output/combinedHits.csv"
+    log: "logs/CombineAllHits/CombineAllHits.log"
     script:
         "scripts/combineAllHits.R"
 
