@@ -11,14 +11,11 @@ HitsFile <- snakemake@input[["hits"]]
 GenomeName <- snakemake@wildcards[["genomeName"]]
 BlastResultsFile <- snakemake@input[["results"]]
 OutputPath <- snakemake@output[["unknownHitsFile"]]
-
+BlastHeaders <- snakemake@params[["BlastHeaders"]]
 
 # Get the joined eggNOG annotations / ROS info
 JoinedHitAttributes <- read_csv(JoinedHitAttributesFile) %>%
   distinct(query_name, .keep_all = TRUE)
-
-BlastHeaders <- c("qseqid", "sseqid", "pident", "length", "mismatch", 
-                  "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore", "sframe", "qframe")
 
 AllProbeBlastHits <- read_csv(BlastResultsFile, col_names = BlastHeaders)
 numHits <- nrow(AllProbeBlastHits)

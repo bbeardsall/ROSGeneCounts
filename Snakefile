@@ -11,7 +11,10 @@ rule all:
     input:
         #expand("output/results/results_{genomeName}.csv", genomeName = IDS.genomeName)
         #"output/combinedHits.csv"
-        "output/eggNOG/Symbiodinium_goreaui-aa-gen.emapper.annotations"
+        #"output/eggNOG/Symbiodinium_goreaui-aa-gen.emapper.annotations"
+        #"output/JoinedEggNOGROS/JoinedEggNOGROS_Symbiodinium_goreaui-aa-gen.csv"
+        #"output/unknownHits/UnknownHits_Symbiodinium_goreaui-aa-gen.fasta"
+        "output/SpBlastResults/SPBlast_Symbiodinium_goreaui-aa-gen.csv"
 
 # Bash script to blast probe sequences against omes
 rule BlastProbesGenomes:
@@ -65,8 +68,8 @@ rule eggNOG:
         "bash scripts/eggNOG.bash {input.hitsFile} {wildcards.genomeName} {threads} {params.m}"
         " {params.d} {params.tax_scope} {params.go_evidence} {params.target_orthologs} {params.seed_ortholog_evalue}"
         " {params.seed_ortholog_score} {params.query_cover} {params.subject_cover}"
-        #"python2.7 ~/eggNOG/eggnog-mapper-master/emapper.py --translate -i {input.hitsFile} --output output/eggNOG/{wildcards.genomeName} -m diamond --cpu {threads} -d 'none' --tax_scope 'auto' --go_evidence 'non-electronic' --target_orthologs 'all' --seed_ortholog_evalue 0.001 --seed_ortholog_score 60 --query-cover 20 --subject-cover 0"
-    
+
+# R script to join eggNOG annotations with ROS enzyme EC numbers
 rule JoinROSEggNOG:
     input:
         eggNOGannotations="output/eggNOG/{genomeName}.emapper.annotations",
@@ -75,8 +78,9 @@ rule JoinROSEggNOG:
         JoinedHitAttributes="output/JoinedEggNOGROS/JoinedEggNOGROS_{genomeName}.csv"
     log: "logs/JoinROSEggNOG/{genomeName}.log"
     script:
-        "scripts/JoinEggNOGAnnotations.R"
+        "scripts/JoinROSEggNOG.R"
 
+# R script to find hits with no eggNOG ROS annotations, save to fasta 
 rule GetUnmatchedHits:
     input:
         JoinedHitAttributes="output/JoinedEggNOGROS/JoinedEggNOGROS_{genomeName}.csv",
@@ -84,10 +88,13 @@ rule GetUnmatchedHits:
         hits="output/hits/HITS_{genomeName}.fasta"
     output:
         unknownHitsFile="output/unknownHits/UnknownHits_{genomeName}.fasta"
+    params:
+        BlastHeaders=config["GetProbeHitSeqs"]["BlastHeaders"]
     log: "logs/GetUnmatchedHits/{genomeName}.log"
     script:
         "scripts/GetUnmatchedHits.R"
 
+# Make a blast database from provided custom sequences
 rule MakeBlastDbExtraSeqs:
     input:
         "DataIn/ExtraSequences.fasta"
@@ -97,6 +104,7 @@ rule MakeBlastDbExtraSeqs:
     shell:
         "makeblastdb -in {input} -out output/extraDatabases/ExtraSequences -title ExtraSequences -dbtype prot"
 
+# combine the extra sequences blast database with the (downloaded already) swissprot blast database
 rule CombineSpExtraSeqsDB:
     input:
         #doneDbs="output/databases/{extraSeqs}.makeblastdb.done",
@@ -108,17 +116,21 @@ rule CombineSpExtraSeqsDB:
     shell:
         "blastdb_aliastool -dblist 'output/extraDatabases/ExtraSequences DataIn/SpDatabase/swissprot' -dbtype prot -out output/extraDatabases/ExtraSeqsSwissProtCombined -title ExtraSeqsSwissProtCombined"
 
+# Bash script to BLAST unknown sequences against the combined swissprot/extra custom sequences database
 rule SpBlast:
     input:
         unknownHitsFile="output/unknownHits/UnknownHits_{genomeName}.fasta",
         databaseDone="output/extraDatabases/ExtraSeqsSwissProtCombined.makeblastdb.done"
     output:
         SpResults="output/SpBlastResults/SPBlast_{genomeName}.csv"
+    params:
+        evalue=config["SpBlast"]["evalue"]
     log: "logs/SpBlast/{genomeName}.log"
     threads:
         4
     shell:
-        "bash scripts/SpBlastSnake.bash {input.unknownHitsFile} output/extraDatabases/ExtraSeqsSwissProtCombined {output.SpResults} 4"
+        "bash scripts/SpBlast.bash {input.unknownHitsFile} output/extraDatabases/ExtraSeqsSwissProtCombined"
+        " {output.SpResults} 4 {params.evalue}"
 
 rule GetUniprotEC:
     input:

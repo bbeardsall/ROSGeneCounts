@@ -4,6 +4,7 @@ unknownHits="$1"
 database="$2"
 results="$3"
 threads="$4"
+evalue="$5"
 
 # function to parse first sequence of FASTA, determine if AA or DNA
 # sets isDNA = 1 if DNA, 0 if not
@@ -45,9 +46,9 @@ if [[ $isDNA == 0 ]]
     # if not DNA, run blastp
     then
         echo blastp
-        blastp -db ${database} -query ${unknownHits} -out ${results} -outfmt '10 std qframe sframe' -evalue 0.5 -num_threads ${threads} -max_hsps 10 -max_target_seqs 10
+        blastp -db ${database} -query ${unknownHits} -out ${results} -outfmt '10 std qframe sframe' -evalue ${evalue} -num_threads ${threads} -max_hsps 10 -max_target_seqs 10
     # if DNA, run blastx
     else
         echo blastx
-        blastx -db ${database} -query ${unknownHits} -out ${results} -outfmt '10 std qframe sframe' -evalue 0.5 -num_threads ${threads} -max_hsps 10 -max_target_seqs 10
+        blastx -db ${database} -query ${unknownHits} -out ${results} -outfmt '10 std qframe sframe' -evalue ${evalue} -num_threads ${threads} -max_hsps 10 -max_target_seqs 10
 fi
