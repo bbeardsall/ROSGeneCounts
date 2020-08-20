@@ -8,6 +8,14 @@ input=$1
 output=$2
 cpu=$3
 m=$4
+d=$5
+tax_scope=$6
+go_evidence=$7
+target_orthologs=$8
+seed_ortholog_evalue=$9
+seed_ortholog_score=${10}
+query_cover=${11}
+subject_cover=${12}
 
 # function to parse first sequence of FASTA, determine if AA or DNA
 # sets isDNA = 1 if DNA, 0 if not
@@ -50,11 +58,11 @@ if [[ $isDNA == 0 ]]
     # if not DNA, run eggNOG untranslated
     then
         echo "eggNOG with prot..."
-        python2.7 ~/eggNOG/eggnog-mapper-master/emapper.py -i ${input} --output output/eggNOG/${output} -m ${m} --cpu ${cpu} -d 'none' --tax_scope 'auto' --go_evidence 'non-electronic' --target_orthologs 'all' --seed_ortholog_evalue 0.001 --seed_ortholog_score 60 --query-cover 20 --subject-cover 0
+        python2.7 ~/eggNOG/eggnog-mapper-master/emapper.py -i ${input} --output output/eggNOG/${output} -m ${m} --cpu ${cpu} --tax_scope ${tax_scope} --go_evidence ${go_evidence} --target_orthologs ${target_orthologs} --seed_ortholog_evalue ${seed_ortholog_evalue} --seed_ortholog_score ${seed_ortholog_score} --query-cover ${query_cover} --subject-cover ${subject_cover}
 
     else
 	# else if DNA, translate and run eggNOG
         echo "eggNOG with DNA..."
-        python2.7 ~/eggNOG/eggnog-mapper-master/emapper.py --translate -i ${input} --output output/eggNOG/${output} -m ${m} --cpu ${cpu} -d 'none' --tax_scope 'auto' --go_evidence 'non-electronic' --target_orthologs 'all' --seed_ortholog_evalue 0.001 --seed_ortholog_score 60 --query-cover 20 --subject-cover 0 
+        python2.7 ~/eggNOG/eggnog-mapper-master/emapper.py --translate i ${input} --output output/eggNOG/${output} -m ${m} --cpu ${cpu} --tax_scope ${tax_scope} --go_evidence ${go_evidence} --target_orthologs ${target_orthologs} --seed_ortholog_evalue ${seed_ortholog_evalue} --seed_ortholog_score ${seed_ortholog_score} --query-cover ${query_cover} --subject-cover ${subject_cover}
 fi
 echo --------------------------

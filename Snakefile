@@ -10,8 +10,8 @@ Isoforms = glob_wildcards("DataIn/Isoforms/IsoformSequences/{Isoform}.fasta")
 rule all:
     input:
         #expand("output/results/results_{genomeName}.csv", genomeName = IDS.genomeName)
-        "output/combinedHits.csv"
-        #"output/eggNOG/Symbiodinium_goreaui-aa-gen.emapper.annotations"
+        #"output/combinedHits.csv"
+        "output/eggNOG/Symbiodinium_goreaui-aa-gen.emapper.annotations"
 
 # Bash script to blast probe sequences against omes
 rule BlastProbesGenomes:
@@ -41,18 +41,30 @@ rule GetProbeHitSeqs:
     script:
         "scripts/GetProbeHitSeqs.R"
 
+# Bash script to run eggNOG-mapper on probe hit sequences
 rule eggNOG:
     input:
         hitsFile="output/hits/HITS_{genomeName}.fasta"
     output:
         protected("output/eggNOG/{genomeName}.emapper.annotations")
     params:
-        m=config["eggNOG"]["m"]
+        m=config["eggNOG"]["m"],
+        d=config["eggNOG"]["d"],
+        tax_scope=config["eggNOG"]["tax_scope"],
+        go_evidence=config["eggNOG"]["go_evidence"],
+        target_orthologs=config["eggNOG"]["target_orthologs"],
+        seed_ortholog_evalue=config["eggNOG"]["seed_ortholog_evalue"],
+        seed_ortholog_score=config["eggNOG"]["seed_ortholog_score"],
+        query_cover=config["eggNOG"]["query_cover"],
+        subject_cover=config["eggNOG"]["subject_cover"]
+        
     log: "logs/eggNOG/{genomeName}.log"
     threads:
         config["eggNOG"]["threads"]
     shell:
         "bash scripts/eggNOG.bash {input.hitsFile} {wildcards.genomeName} {threads} {params.m}"
+        " {params.d} {params.tax_scope} {params.go_evidence} {params.target_orthologs} {params.seed_ortholog_evalue}"
+        " {params.seed_ortholog_score} {params.query_cover} {params.subject_cover}"
         #"python2.7 ~/eggNOG/eggnog-mapper-master/emapper.py --translate -i {input.hitsFile} --output output/eggNOG/{wildcards.genomeName} -m diamond --cpu {threads} -d 'none' --tax_scope 'auto' --go_evidence 'non-electronic' --target_orthologs 'all' --seed_ortholog_evalue 0.001 --seed_ortholog_score 60 --query-cover 20 --subject-cover 0"
     
 rule JoinROSEggNOG:
