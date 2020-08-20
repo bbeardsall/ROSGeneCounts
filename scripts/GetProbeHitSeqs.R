@@ -11,12 +11,9 @@ suppressPackageStartupMessages(library(Biostrings, quietly = TRUE))
 genomeFile <- snakemake@input[["genome"]]
 genomeName <- snakemake@wildcards[["genomeName"]]
 resultFile <- snakemake@input[["blast_result"]]
+BlastHeaders <- snakemake@params[["BlastHeaders"]]
 
 print(genomeName)
-
-# Define BLAST results csv headers
-BlastHeaders <- c("qseqid", "sseqid", "pident", "length", "mismatch", 
-                  "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore", "sframe", "qframe")
 
 # Function to read in a blast results csv, and keep only the unique sequence IDs (since multiple probes can match the same sequence).
 read_blast_csv_unique_results <- function(InFilepath, ColNames) {

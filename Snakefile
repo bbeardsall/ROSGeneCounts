@@ -10,8 +10,8 @@ Isoforms = glob_wildcards("DataIn/Isoforms/IsoformSequences/{Isoform}.fasta")
 rule all:
     input:
         #expand("output/results/results_{genomeName}.csv", genomeName = IDS.genomeName)
-        #"output/combinedHits.csv"
-        "output/results/results_Skeletonema_menzelii_CCMP793-aa-trans.csv"
+        "output/combinedHits.csv"
+        #"output/eggNOG/Symbiodinium_goreaui-aa-gen.emapper.annotations"
 
 # Bash script to blast probe sequences against omes
 rule BlastProbesGenomes:
@@ -35,20 +35,24 @@ rule GetProbeHitSeqs:
         genome="DataIn/Genomes/{genomeName}.fasta"
     output:
         hits="output/hits/HITS_{genomeName}.fasta"
+    params:
+        BlastHeaders=config["GetProbeHitSeqs"]["BlastHeaders"]
     log: "logs/GetHitSeqs/{genomeName}.log"
     script:
-        "scripts/get_hits.R"
+        "scripts/GetProbeHitSeqs.R"
 
 rule eggNOG:
     input:
         hitsFile="output/hits/HITS_{genomeName}.fasta"
     output:
         protected("output/eggNOG/{genomeName}.emapper.annotations")
+    params:
+        m=config["eggNOG"]["m"]
     log: "logs/eggNOG/{genomeName}.log"
     threads:
         config["eggNOG"]["threads"]
     shell:
-        "bash scripts/eggNOG.bash {input.hitsFile} {wildcards.genomeName} {threads}"
+        "bash scripts/eggNOG.bash {input.hitsFile} {wildcards.genomeName} {threads} {params.m}"
         #"python2.7 ~/eggNOG/eggnog-mapper-master/emapper.py --translate -i {input.hitsFile} --output output/eggNOG/{wildcards.genomeName} -m diamond --cpu {threads} -d 'none' --tax_scope 'auto' --go_evidence 'non-electronic' --target_orthologs 'all' --seed_ortholog_evalue 0.001 --seed_ortholog_score 60 --query-cover 20 --subject-cover 0"
     
 rule JoinROSEggNOG:
