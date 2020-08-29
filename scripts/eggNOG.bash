@@ -63,6 +63,6 @@ if [[ $isDNA == 0 ]]
     else
 	# else if DNA, translate and run eggNOG
         echo "eggNOG with DNA..."
-        python2.7 ~/eggNOG/eggnog-mapper-master/emapper.py --translate i ${input} --output output/eggNOG/${output} -m ${m} --cpu ${cpu} --tax_scope ${tax_scope} --go_evidence ${go_evidence} --target_orthologs ${target_orthologs} --seed_ortholog_evalue ${seed_ortholog_evalue} --seed_ortholog_score ${seed_ortholog_score} --query-cover ${query_cover} --subject-cover ${subject_cover}
+        python2.7 ~/eggNOG/eggnog-mapper-master/emapper.py --translate -i ${input} --output output/eggNOG/${output} -m ${m} --cpu ${cpu} --tax_scope ${tax_scope} --go_evidence ${go_evidence} --target_orthologs ${target_orthologs} --seed_ortholog_evalue ${seed_ortholog_evalue} --seed_ortholog_score ${seed_ortholog_score} --query-cover ${query_cover} --subject-cover ${subject_cover}
 fi
 echo --------------------------

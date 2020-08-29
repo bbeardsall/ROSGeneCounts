@@ -9,12 +9,13 @@ Isoforms = glob_wildcards("DataIn/Isoforms/IsoformSequences/{Isoform}.fasta")
 # default rule to generate final output
 rule all:
     input:
+        "output/combinedHits.csv"
         #expand("output/results/results_{genomeName}.csv", genomeName = IDS.genomeName)
-        #"output/combinedHits.csv"
         #"output/eggNOG/Symbiodinium_goreaui-aa-gen.emapper.annotations"
         #"output/JoinedEggNOGROS/JoinedEggNOGROS_Symbiodinium_goreaui-aa-gen.csv"
         #"output/unknownHits/UnknownHits_Symbiodinium_goreaui-aa-gen.fasta"
-        "output/SpBlastResults/SPBlast_Symbiodinium_goreaui-aa-gen.csv"
+        #"output/SpBlastResults/SPBlast_Symbiodinium_goreaui-aa-gen.csv"
+        #"output/JoinedUniprotBlastData/JoinedUniprotBlast_Symbiodinium_goreaui-aa-gen.csv"
 
 # Bash script to blast probe sequences against omes
 rule BlastProbesGenomes:
@@ -132,15 +133,18 @@ rule SpBlast:
         "bash scripts/SpBlast.bash {input.unknownHitsFile} output/extraDatabases/ExtraSeqsSwissProtCombined"
         " {output.SpResults} 4 {params.evalue}"
 
+# R script to match uniprot id from swissprot Blast results with online metadata/EC #
 rule GetUniprotEC:
     input:
         CustomProtId="DataIn/CustomProtId.csv",
         SpBlastData="output/SpBlastResults/SPBlast_{genomeName}.csv"
     output:
         JoinedUniprotBlast="output/JoinedUniprotBlastData/JoinedUniprotBlast_{genomeName}.csv"
+    params:
+        BlastHeaders=config["GetProbeHitSeqs"]["BlastHeaders"]
     log: "logs/GetUniprotEC/{genomeName}.log"
     script:
-        "scripts/GetUniprotECsnake.R"
+        "scripts/GetUniprotEC.R"
 
 rule JoinSpROSEggNOG:
     input:
